@@ -1,0 +1,6 @@
+{
+  "name": "FiloENEM — Simulado de Filosofia TRI",
+  "description": "Simulado completo com 200 questões de Filosofia no estilo ENEM (TRI) para o 3º ano do Ensino Médio, com gabarito comentado em todas as alternativas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
