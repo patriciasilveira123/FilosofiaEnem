@@ -16,3 +16,52 @@
     font-family: var(--font-display);
   }
 }
+
+/* Complete high-contrast Dark Mode visibility across all tabs & elements */
+.theme-dark .bg-white {
+  background-color: #27272a;
+}
+
+.theme-dark .bg-slate-50 {
+  background-color: #3f3f46;
+}
+
+.theme-dark .bg-slate-100 {
+  background-color: #3f3f46;
+}
+
+.theme-dark .border-slate-200,
+.theme-dark .border-slate-100,
+.theme-dark .border-slate-300 {
+  border-color: #52525b;
+}
+
+.theme-dark .text-slate-900,
+.theme-dark .text-slate-800,
+.theme-dark .text-slate-700 {
+  color: #ffffff;
+}
+
+.theme-dark .text-slate-600,
+.theme-dark .text-slate-500 {
+  color: #e4e4e7;
+}
+
+.theme-dark .text-blue-700 {
+  color: #60a5fa;
+}
+
+.theme-dark .text-emerald-700,
+.theme-dark .text-emerald-800 {
+  color: #34d399;
+}
+
+.theme-dark .text-red-700 {
+  color: #f87171;
+}
+
+.theme-dark select {
+  background-color: #3f3f46;
+  color: #ffffff;
+  border-color: #52525b;
+}

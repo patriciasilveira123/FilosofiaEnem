@@ -10,6 +10,7 @@ import {
   ListChecks,
   Filter,
   FileDown,
+  Palette,
 } from 'lucide-react';
 import { ALL_QUESTIONS } from './data/questions';
 import { CURRICULUM } from './data/curriculum';
@@ -20,8 +21,10 @@ import { downloadQuestionsWord } from './utils/wordExport';
 
 type ViewTab = 'simulado' | 'unidades' | 'desempenho' | 'gabarito';
 type StatusFilter = 'todas' | 'nao_respondidas' | 'erradas';
+type PageTheme = 'claro' | 'sepia' | 'escuro';
 
 const STORAGE_KEY = 'filoenem_answers_v1';
+const THEME_KEY = 'filoenem_page_theme_v1';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ViewTab>('simulado');
@@ -40,6 +43,55 @@ export default function App() {
   const [currentQuestionId, setCurrentQuestionId] = useState<number>(1);
   const [showAllComments, setShowAllComments] = useState<boolean>(true);
   const [confirmReset, setConfirmReset] = useState<boolean>(false);
+  const [pageTheme, setPageTheme] = useState<PageTheme>(() => {
+    try {
+      const saved = localStorage.getItem(THEME_KEY) as PageTheme | null;
+      return saved === 'sepia' || saved === 'escuro' ? saved : 'claro';
+    } catch {
+      return 'claro';
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(THEME_KEY, pageTheme);
+    } catch {
+      // Ignore storage quota errors
+    }
+    const bgMap: Record<PageTheme, string> = {
+      claro: '#f8fafc',
+      sepia: '#fef9c3',
+      escuro: '#18181b',
+    };
+    document.body.style.backgroundColor = bgMap[pageTheme];
+  }, [pageTheme]);
+
+  const cyclePageTheme = () => {
+    setPageTheme((prev) => (prev === 'claro' ? 'sepia' : prev === 'sepia' ? 'escuro' : 'claro'));
+  };
+
+  const pageBgClass =
+    pageTheme === 'sepia'
+      ? 'bg-[#FEFCE8] text-slate-900'
+      : pageTheme === 'escuro'
+        ? 'bg-zinc-900 text-white'
+        : 'bg-slate-50 text-slate-900';
+
+  const surfaceClass =
+    pageTheme === 'sepia'
+      ? 'bg-[#FEF9C3] border-amber-200 text-slate-900'
+      : pageTheme === 'escuro'
+        ? 'bg-zinc-800 border-zinc-700 text-white'
+        : 'bg-white border-slate-200 text-slate-900';
+
+  const isDark = pageTheme === 'escuro';
+  const isSepia = pageTheme === 'sepia';
+
+  const headerClass = isSepia
+    ? 'bg-[#FEF9C3] border-amber-200 text-slate-900'
+    : isDark
+      ? 'bg-zinc-800 border-zinc-700 text-white'
+      : 'bg-white border-slate-200 text-slate-900';
 
   useEffect(() => {
     try {
@@ -79,6 +131,14 @@ export default function App() {
       ...prev,
       [currentQuestion.id]: key,
     }));
+  };
+
+  const handleRedoQuestion = () => {
+    setAnswers((prev) => {
+      const next = { ...prev };
+      delete next[currentQuestion.id];
+      return next;
+    });
   };
 
   const handleNext = () => {
@@ -135,18 +195,18 @@ export default function App() {
   const isAnswered = Boolean(userAnswer);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-      {/* Top Bar Contract: 3 zones */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-8">
+    <div className={`min-h-screen flex flex-col transition-colors ${pageBgClass} ${isDark ? 'theme-dark' : ''}`}>
+      {/* Top Bar Contract */}
+      <header className={`border-b sticky top-0 z-30 transition-colors ${headerClass}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4 sm:gap-8">
           <button
             onClick={() => setActiveTab('simulado')}
-            className="font-display text-xl font-bold tracking-tight text-slate-900 whitespace-nowrap shrink-0 cursor-pointer"
+            className="font-display text-xl font-bold tracking-tight whitespace-nowrap shrink-0 cursor-pointer"
           >
             FiloENEM
           </button>
 
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+          <nav className="hidden md:flex items-center gap-6 text-sm font-medium opacity-80">
             <button
               onClick={() => setActiveTab('simulado')}
               className={`whitespace-nowrap shrink-0 py-1 border-b-2 transition-colors cursor-pointer ${
@@ -189,7 +249,15 @@ export default function App() {
             </button>
           </nav>
 
-          <div className="flex items-center shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              onClick={cyclePageTheme}
+              title="Mudar cor da página"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300/80 bg-white/80 text-slate-800 hover:bg-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <Palette className="w-3.5 h-3.5 text-blue-700" />
+              {pageTheme === 'claro' ? 'Claro' : pageTheme === 'sepia' ? 'Sépia' : 'Escuro'}
+            </button>
             <button
               onClick={handleReset}
               className={`inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
@@ -237,7 +305,7 @@ export default function App() {
         {activeTab === 'simulado' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left / Main Interactive Question Stage */}
-            <section className="lg:col-span-8 bg-white border border-slate-200 rounded-xl p-6 sm:p-8">
+            <section className={`lg:col-span-8 border rounded-xl p-6 sm:p-8 transition-colors ${surfaceClass}`}>
               {/* Unboxed Metadata Line */}
               <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 mb-4 font-mono tabular-nums">
                 <span className="font-semibold text-slate-900">
@@ -256,15 +324,29 @@ export default function App() {
               </div>
 
               {/* Base Text */}
-              <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-5 mb-5">
-                <p className="text-[15px] sm:text-base leading-relaxed text-slate-800 whitespace-pre-line text-justify">
+              <div
+                className={`border rounded-lg p-5 mb-5 ${
+                  isDark
+                    ? 'bg-slate-800 border-slate-700 text-white'
+                    : isSepia
+                      ? 'bg-[#FEFCE8] border-amber-200 text-slate-900'
+                      : 'bg-slate-50 border-slate-200/80 text-slate-800'
+                }`}
+              >
+                <p className="text-[15px] sm:text-base leading-relaxed whitespace-pre-line text-justify">
                   {currentQuestion.baseText}
                 </p>
-                <p className="mt-3 text-xs text-slate-500 italic">{currentQuestion.source}</p>
+                <p className={`mt-3 text-xs italic ${isDark ? 'text-white/80' : 'text-slate-500'}`}>
+                  {currentQuestion.source}
+                </p>
               </div>
 
               {/* Command */}
-              <h1 className="font-sans text-base sm:text-lg font-semibold text-slate-900 leading-snug mb-6">
+              <h1
+                className={`font-sans text-base sm:text-lg font-semibold leading-snug mb-6 ${
+                  isDark ? 'text-white' : 'text-slate-900'
+                }`}
+              >
                 {currentQuestion.command}
               </h1>
 
@@ -274,22 +356,33 @@ export default function App() {
                   const isSelected = userAnswer === alt.key;
                   const isCorrectAlt = currentQuestion.correct === alt.key;
 
-                  let containerClass =
-                    'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50';
-                  let badgeClass = 'bg-slate-100 text-slate-700 border-slate-200';
+                  let containerClass = isDark
+                    ? 'border-zinc-600 bg-zinc-700/70 hover:border-zinc-500 hover:bg-zinc-700 text-white'
+                    : isSepia
+                      ? 'border-amber-200 bg-[#FEFCE8] hover:bg-[#FEF9C3] text-slate-900'
+                      : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-800';
+                  let badgeClass = isDark
+                    ? 'bg-zinc-800 text-white border-zinc-500'
+                    : 'bg-slate-100 text-slate-700 border-slate-200';
                   let statusText = '';
 
                   if (isAnswered) {
                     if (isCorrectAlt) {
-                      containerClass = 'border-emerald-600 bg-emerald-50/50';
+                      containerClass = isDark
+                        ? 'border-emerald-500 bg-emerald-950/60 text-white'
+                        : 'border-emerald-600 bg-emerald-50/50';
                       badgeClass = 'bg-emerald-600 text-white border-emerald-600';
                       statusText = isSelected ? 'Sua escolha · Correta' : 'Gabarito Correto';
                     } else if (isSelected && !isCorrectAlt) {
-                      containerClass = 'border-red-600 bg-red-50/50';
+                      containerClass = isDark
+                        ? 'border-red-500 bg-red-950/60 text-white'
+                        : 'border-red-600 bg-red-50/50';
                       badgeClass = 'bg-red-600 text-white border-red-600';
                       statusText = 'Sua escolha · Incorreta';
                     } else {
-                      containerClass = 'border-slate-200 bg-white opacity-90';
+                      containerClass = isDark
+                        ? 'border-zinc-700 bg-zinc-800/60 text-white opacity-90'
+                        : 'border-slate-200 bg-white opacity-90';
                     }
                   }
 
@@ -307,7 +400,7 @@ export default function App() {
                         </span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-sm sm:text-[15px] text-slate-800 leading-relaxed text-justify">
+                            <p className="text-sm sm:text-[15px] leading-relaxed text-justify">
                               {alt.text}
                             </p>
                             {isAnswered && isCorrectAlt && (
@@ -364,14 +457,23 @@ export default function App() {
                 </div>
 
                 {isAnswered && (
-                  <button
-                    onClick={() => setShowAllComments((v) => !v)}
-                    className="text-xs font-medium text-blue-700 hover:underline cursor-pointer"
-                  >
-                    {showAllComments
-                      ? 'Mostrar apenas selecionada e correta'
-                      : 'Mostrar comentários de todas as 5 alternativas'}
-                  </button>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={handleRedoQuestion}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Refazer questão
+                    </button>
+                    <button
+                      onClick={() => setShowAllComments((v) => !v)}
+                      className="text-xs font-medium text-blue-700 hover:underline cursor-pointer"
+                    >
+                      {showAllComments
+                        ? 'Mostrar apenas selecionada e correta'
+                        : 'Mostrar comentários de todas as 5 alternativas'}
+                    </button>
+                  </div>
                 )}
               </div>
             </section>
@@ -379,7 +481,7 @@ export default function App() {
             {/* Right / Control & Navigator Deck */}
             <aside className="lg:col-span-4 space-y-6">
               {/* Live TRI Score Card */}
-              <div className="bg-white border border-slate-200 rounded-xl p-5">
+              <div className={`border rounded-xl p-5 transition-colors ${surfaceClass}`}>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-semibold text-slate-500">Estimativa TRI</span>
                   <span className="text-xs text-slate-500 font-mono tabular-nums">
@@ -417,10 +519,10 @@ export default function App() {
               </div>
 
               {/* Download Full PDF & Word Card in Simulado */}
-              <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
+              <div className={`border rounded-xl p-5 space-y-3 transition-colors ${surfaceClass}`}>
                 <div>
-                  <div className="text-sm font-semibold text-slate-900">Caderno Completo</div>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <div className="text-sm font-semibold">Caderno Completo</div>
+                  <p className={`text-xs mt-0.5 ${isDark ? 'text-white/75' : 'text-slate-600'}`}>
                     200 questões por capítulos + gabarito oficial
                   </p>
                 </div>
@@ -443,7 +545,7 @@ export default function App() {
               </div>
 
               {/* Filters */}
-              <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+              <div className={`border rounded-xl p-5 space-y-4 transition-colors ${surfaceClass}`}>
                 <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                   <Filter className="w-4 h-4 text-slate-500" />
                   Filtros do Caderno
@@ -500,7 +602,7 @@ export default function App() {
               </div>
 
               {/* Question Grid Navigator */}
-              <div className="bg-white border border-slate-200 rounded-xl p-5">
+              <div className={`border rounded-xl p-5 transition-colors ${surfaceClass}`}>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-semibold text-slate-900">
                     Navegador ({filteredQuestions.length})
